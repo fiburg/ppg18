@@ -30,8 +30,8 @@ module initialize
 		real(kind=8) :: width
 		integer :: i
 		
-		width = 1. / NDIM
-		
+		width = 1. / NDIM		
+
 		! Randwerte
 		matrix(1,1) = 1.
 		matrix(NDIM+1,NDIM+1) = 1.

@@ -9,7 +9,8 @@ PROGRAM Poisson
 
 	call createMatrix(matrix, NDIM)
 	call initializeMatrix(matrix, NDIM)
-	
+	call outputMatrix(matrix, 0)	
+
 	call calculate(matrix, NDIM, iter)
 
 	call outputMatrix(matrix, iter)
