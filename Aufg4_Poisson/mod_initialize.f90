@@ -16,7 +16,7 @@ module initialize
 		
 		!create matrix
 
-		allocate(matrix(0:NDIM,0:NDIM))
+		allocate(matrix(1:NDIM+1,1:NDIM+1))
 		
 		matrix(:,:) = 0.
 
@@ -33,17 +33,18 @@ module initialize
 		width = 1. / NDIM
 		
 		! Randwerte
-		do i=0,NDIM
-			matrix(i,0) = 1-i*width
-			matrix(i,NDIM) = i*width
-			matrix(0,i) = 1-i*width
-			matrix(NDIM,i) = i*width
+		matrix(1,1) = 1.
+		matrix(NDIM+1,NDIM+1) = 1.
+		matrix(1,NDIM+1) = 0.
+		matrix(NDIM+1,1) = 0.		
+
+		do i=2,NDIM
+			matrix(i,1) = 1-i*width
+			matrix(i,NDIM+1) = i*width
+			matrix(1,i) = 1-i*width
+			matrix(NDIM+1,i) = i*width
 		end do
 
-		! wirklich auf Null setzen, PRUEFEN
-		matrix(0,NDIM) = 0.0
-		matrix(NDIM,0) = 0.0
-		
 	end subroutine initializeMatrix
 
 end module initialize
