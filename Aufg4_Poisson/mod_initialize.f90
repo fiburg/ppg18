@@ -41,6 +41,9 @@ module initialize
 		do i=2,NDIM
 			matrix(i,1) = 1-i*width
 			matrix(i,NDIM+1) = i*width
+		end do
+
+		do i=2,NDIM
 			matrix(1,i) = 1-i*width
 			matrix(NDIM+1,i) = i*width
 		end do
