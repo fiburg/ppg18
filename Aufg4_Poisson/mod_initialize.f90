@@ -16,7 +16,7 @@ module initialize
 		
 		!create matrix
 
-		allocate(matrix(1:NDIM+1,1:NDIM+1))
+		allocate(matrix(0:NDIM,0:NDIM))
 		
 		matrix(:,:) = 0.
 
@@ -30,23 +30,23 @@ module initialize
 		real(kind=8) :: width
 		integer :: i
 		
-		width = 1. / NDIM		
+		width = 1. / NDIM	
 
 		! Randwerte
-		matrix(1,1) = 1.
-		matrix(NDIM+1,NDIM+1) = 1.
-		matrix(1,NDIM+1) = 0.
-		matrix(NDIM+1,1) = 0.		
+		matrix(0,0) = 1.
+		matrix(NDIM,NDIM) = 1.
+		matrix(0,NDIM) = 0.
+		matrix(NDIM,0) = 0.		
 
-		do i=2,NDIM
-			matrix(i,1) = 1-i*width
-			matrix(i,NDIM+1) = i*width
+		do i=1,NDIM-1
+			matrix(i,0) = 1.-i*width
+			matrix(i,NDIM) = i*width
 		end do
 
-		do i=2,NDIM
-			matrix(1,i) = 1-i*width
-			matrix(NDIM+1,i) = i*width
-		end do
+		do i=1,NDIM-1
+			matrix(0,i) = 1.-i*width
+			matrix(NDIM,i) = i*width
+		end do		
 
 	end subroutine initializeMatrix
 

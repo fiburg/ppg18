@@ -11,48 +11,46 @@ module run
 	subroutine calculate(matrix, NDIM, iter)
 		implicit none
 		real(kind=8), dimension(:,:), pointer, intent(inout) :: matrix
-		real(kind=8) :: star = 0., corr = 0., diff = 0.
+		real(kind=8) :: star = 0., corr = 0.
+		real(kind=8), parameter :: eps = 10.e-6 ! geforderte Genauigkeit
 		integer, intent(in) :: NDIM
-		integer, parameter :: NITER = 40000	! Anzahl Iterationen
-		real(kind=8), parameter :: eps = 1.E-6	! geforderte Genauigkeit
-		integer :: i, j
+		integer, parameter :: NITER = 400000	! Anzahl Iterationen
 		integer, intent(out) :: iter
+		integer :: i, j
+		integer :: ndiff = 0
+
 
 		write(*,*) "It will use Gauß-Seidel Method"
 		
 		do iter=1,NITER
 			! Zuruecksetzen
-			diff = 0.
 			star = 0.
 			corr = 0.
+			ndiff = 0
 
-			do i=2,NDIM
-				do j=2,NDIM
+			do i=1,NDIM-1
+				do j=1,NDIM-1
 					! Abtaststern
 					star = -matrix(i,j+1) - matrix(i-1,j) &
 					&	+ 4 * matrix(i,j)	&
 					&	- matrix(i+1,j)	- matrix(i,j-1)
 					
-					! Korrekturwert
-					corr = (matrix(i,j) &
-					&	* 1./NDIM * 1./NDIM - star) / 4.
-					
-					! Differenz alt neu
-					diff = diff + corr
+					! Korrekturwert, hier Stoerfunktion Null
+					corr = - star / 4.
+
+					! Abbruchbedingung
+					if(corr < eps) ndiff = ndiff + 1					
 
 					! Korrektur
 					matrix(i,j) = matrix(i,j) + corr
 				end do
 			end do
 
-			! mittlere Differenz
-			diff = diff / ((NDIM-1) * (NDIM-1))
-
-			if(diff < eps) exit
+			if(ndiff==((NDIM-1)*(NDIM-1))) exit
 		end do
 
 		iter = iter-1
-	
-	end subroutine calculate
+
+		end subroutine calculate
 
 end module run

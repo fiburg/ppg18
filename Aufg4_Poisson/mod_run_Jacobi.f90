@@ -13,12 +13,13 @@ module run
 		implicit none
 		real(kind=8), dimension(:,:), pointer, intent(inout) :: matrix
 		real(kind=8), dimension(:,:), pointer :: old
-		real(kind=8) :: star = 0., corr = 0., diff = 0.
-		real(kind=8), parameter :: eps = 1.E-6	! geforderte Genauigkeit
+		real(kind=8) :: star = 0., corr = 0.
+		real(kind=8), parameter :: eps = 10.E-6	! geforderte Genauigkeit
 		integer, intent(in) :: NDIM
-		integer, parameter :: NITER = 40000	! Anzahl Iterationen
+		integer, parameter :: NITER = 400000	! Anzahl Iterationen
 		integer :: i, j
 		integer, intent(out) :: iter
+		integer :: ndiff = 0
 		
 		write(*,*) "It will use Jacobi Method"
 
@@ -26,34 +27,31 @@ module run
 
 		do iter=1,NITER
 			! Zuruecksetzen
-			diff = 0.
 			star = 0.
 			corr = 0.
+			ndiff = 0
 			old(:,:) = matrix(:,:)
 
-			do i=2,NDIM
-				do j=2,NDIM
+			do i=1,NDIM-1
+				do j=1,NDIM-1
 					! Abtaststern
 					star = -old(i,j+1) - old(i-1,j) &
-					&	+ 4 * old(i,j)	&
-					&	- old(i+1,j)	- old(i,j-1)
+					&	+ 4. * old(i,j)	&
+					&	- old(i+1,j) - old(i,j-1)
 					
-					! Korrekturwert
-					corr = (old(i,j) &
-					&	* 1./NDIM * 1./NDIM - star) / 4.
+					! Korrekturwert, hier Stoerfunktion Null
+					corr = - star / 4.
 
 					! Korrektur
 					matrix(i,j) = matrix(i,j) + corr
 					
-					! Differenz alt neu
-					diff = diff + (matrix(i,j) - old(i,j))
+					! Abbruchbedingung
+					if(corr < eps) ndiff = ndiff + 1					
+					
 				end do
 			end do
 
-			! mittlere Differenz
-			diff = diff / ((NDIM-1) * (NDIM-1))
-
-			if(diff < eps) exit
+			if(ndiff==((NDIM-1)*(NDIM-1))) exit
 		end do
 
 		iter = iter-1
