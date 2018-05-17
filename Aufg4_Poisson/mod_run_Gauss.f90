@@ -39,7 +39,7 @@ module run
 					corr = - star / 4.
 
 					! Abbruchbedingung
-					if(corr < eps) ndiff = ndiff + 1					
+					if(abs(corr) < eps) ndiff = ndiff + 1					
 
 					! Korrektur
 					matrix(i,j) = matrix(i,j) + corr
@@ -48,8 +48,6 @@ module run
 
 			if(ndiff==((NDIM-1)*(NDIM-1))) exit
 		end do
-
-		iter = iter-1
 
 		end subroutine calculate
 

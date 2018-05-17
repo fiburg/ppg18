@@ -46,15 +46,13 @@ module run
 					matrix(i,j) = matrix(i,j) + corr
 					
 					! Abbruchbedingung
-					if(corr < eps) ndiff = ndiff + 1					
+					if(abs(corr) < eps) ndiff = ndiff + 1					
 					
 				end do
 			end do
 
 			if(ndiff==((NDIM-1)*(NDIM-1))) exit
 		end do
-
-		iter = iter-1
 
 		deallocate(old)
 		
