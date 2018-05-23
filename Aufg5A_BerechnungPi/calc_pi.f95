@@ -16,6 +16,7 @@ program CalculationPi
 	call MPI_INIT(ierr)
 	call MPI_COMM_RANK(MPI_COMM_WORLD,rank,ierr)
 	call MPI_COMM_SIZE (MPI_COMM_WORLD, size,ierr)
+	print*, 'I am', rank, 'of', size
  	
 	sum = 0.0
 	
@@ -28,19 +29,20 @@ program CalculationPi
 	
 ! 	THE INDIVIDUAL SUM CASE
 !
-! 	if (rank == master) then
-! 		result = mypi
-! 		do ranki = 1, size-1
-! 			call MPI_Recv(mypi, 1, MPI_DOUBLE_PRECISION, ranki, msg, MPI_COMM_WORLD, status, ierr)
-! 			print*, 'received from rank ', ranki
-! 			result = result + mypi
-! 		end do
-! 		
-! 		write(6,*) result
-! 		
-! 	else
-! 		call MPI_Send(mypi, 1, MPI_DOUBLE_PRECISION, master, msg, MPI_COMM_WORLD, ierr)
-! 	endif
+	if (rank == master) then
+		result = mypi
+		do ranki = 1, size-1
+			call MPI_Recv(mypi, 1, MPI_DOUBLE_PRECISION, ranki, msg, MPI_COMM_WORLD, status, ierr)
+			print*, 'received from rank ', ranki
+			result = result + mypi
+		end do
+		
+		write(6,*) result
+		
+	else
+		call MPI_Send(mypi, 1, MPI_DOUBLE_PRECISION, master, msg, MPI_COMM_WORLD, ierr)
+	endif
+!
 !	END OF INDIVIDUAL SUM CASE
 	
 	
