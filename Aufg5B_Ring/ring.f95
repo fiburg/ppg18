@@ -1,3 +1,10 @@
+! Paralleles Programmieren für Geowissenschaftler im SS 2018
+! Uebungsblatt 5
+! Abgabe 29.05.2018
+! Menken und Burgemeister
+
+! Ring - Send and receive, process 0 sends the process id to process 1,
+! process 1 to process 2 .... The result will be the sum of each process id. 
 program ring
 
 	use mpi
@@ -49,6 +56,6 @@ program ring
 	! RESULTS
 	! 4 proc : 6
 	! 8 proc : 28
-	! 11 proc :	55
+	! 11 proc : 55
 	
 end program
