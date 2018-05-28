@@ -3,7 +3,7 @@
 ! Abgabe 29.05.2018
 ! Menken und Burgemeister
 
-! Iterative Berechnung von Pi mittels der Integration der Funktion
+! Iterativ calculation of pi with the integration of function
 ! f(x) = 4/(1+x*x).
 program CalculationPi
 	
@@ -23,7 +23,7 @@ program CalculationPi
 	call MPI_COMM_RANK(MPI_COMM_WORLD,rank,ierr)
 	call MPI_COMM_SIZE (MPI_COMM_WORLD, size,ierr)
  	
-	! Berechnung der Teilergebnisse
+	! calculation of partial results
 	sum = 0.0
 	
 	do i=rank+1, npieces, size
@@ -38,15 +38,16 @@ program CalculationPi
 	if (rank == master) then
 		result = mypi
 		do ranki = 1, size-1
-			call MPI_RECV(mypi, 1, MPI_DOUBLE_PRECISION, ranki, msg, MPI_COMM_WORLD, &
-			&	      status, ierr)
+			call MPI_RECV(mypi, 1, MPI_DOUBLE_PRECISION, ranki, &
+			&	      msg, MPI_COMM_WORLD, status, ierr)
 			result = result + mypi
 		end do
 		
 		write(*,*) result
 		
 	else
-		call MPI_SEND(mypi, 1, MPI_DOUBLE_PRECISION, master, msg, MPI_COMM_WORLD, ierr)
+		call MPI_SEND(mypi, 1, MPI_DOUBLE_PRECISION, master, msg, &
+		&	      MPI_COMM_WORLD, ierr)
 	endif
 !
 !	END OF INDIVIDUAL SUM CASE

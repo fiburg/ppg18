@@ -26,28 +26,34 @@ program ring
 	! first process starts the ring communication
 	if (rank==0) then
 		sum_id = rank
-		call MPI_Send(sum_id, 1, MPI_INTEGER, rank+1, msg, MPI_COMM_WORLD, ierr)
+		call MPI_Send(sum_id, 1, MPI_INTEGER, rank+1, msg, &
+		&	      MPI_COMM_WORLD, ierr)
 		
-		! write the added up process ids after going through all process and ending up
-		! again at the first process
-		call MPI_Recv(sum_id, 1, MPI_INTEGER, size-1, msg, MPI_COMM_WORLD, status, ierr)
+		! write the added up process ids after going through all 
+		! process and ending up again at the first process
+		call MPI_Recv(sum_id, 1, MPI_INTEGER, size-1, msg, &
+		&	      MPI_COMM_WORLD, status, ierr)
 		write(*,*) "Added up process ids: ", sum_id
 	
 	else
 		! receive the current value of sum_id from the process before
-		call MPI_Recv(sum_id, 1, MPI_INTEGER, rank-1, msg, MPI_COMM_WORLD, status, ierr)
+		call MPI_Recv(sum_id, 1, MPI_INTEGER, rank-1, msg, &
+		&	      MPI_COMM_WORLD, status, ierr)
 		print*, rank, "received"
 		
 		if (rank < size-1) then
-			! if it's not the last process set the recipient to the next process
+			! if it's not the last process set the recipient to 
+			! the next process
 			recp = rank+1
 		else
-			! if it's the last process set the recipient to the first process
+			! if it's the last process set the recipient to the 
+			! first process
 			recp = 0
 		endif
 		
 		! send the current sum of ids plus the process id
-		call MPI_Send(sum_id+rank, 1, MPI_INTEGER, recp, msg, MPI_COMM_WORLD, ierr)
+		call MPI_Send(sum_id+rank, 1, MPI_INTEGER, recp, msg, &
+		&	      MPI_COMM_WORLD, ierr)
 
 	endif
 	
