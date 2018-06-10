@@ -12,7 +12,7 @@ module initialize
 	subroutine createMatrix(matrix, xdim, ydim)
 		implicit none
 		integer, intent(in) :: xdim, ydim 
-		integer(kind=2), dimension(:,:), pointer, intent(inout) :: matrix
+		integer, dimension(:,:), pointer, intent(inout) :: matrix
 		
 		!create matrix
 
@@ -25,7 +25,7 @@ module initialize
 	! Initialiserung der Matrix
 	subroutine initializeMatrix(matrix)
 		implicit none
-		integer(kind=2), dimension(:,:), pointer, intent(inout) :: matrix		
+		integer, dimension(:,:), pointer, intent(inout) :: matrix
 		integer :: i, j, xdim, ydim, seq
 		
 		xdim = ubound(matrix, 1)

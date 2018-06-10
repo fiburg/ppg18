@@ -10,12 +10,12 @@ module calculation
 	! Durchfuehrung der Operation N(i,j) = N(i,j)*(ProzessorID + 1)
 	subroutine operationSequence(chunck, process)
 		implicit none
-		integer(kind=2), dimension(:,:), pointer, intent(inout) :: chunck
+		integer, dimension(:,:), pointer, intent(inout) :: chunck
 		integer, intent(in) :: process
 		integer :: i, j, xdim, ydim
 		
-		xdim = ubound(matrix, 1)
-		ydim = ubound(matrix, 2)
+		xdim = ubound(chunck, 1)
+		ydim = ubound(chunck, 2)
 
 		do i=1,xdim
 			do j=1,ydim
