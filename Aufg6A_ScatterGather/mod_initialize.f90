@@ -14,8 +14,6 @@ module initialize
 		integer, intent(in) :: xdim, ydim 
 		integer, dimension(:,:), pointer, intent(inout) :: matrix
 		
-		!create matrix
-
 		allocate(matrix(1:xdim,1:ydim))
 		
 		matrix(:,:) = 0.
