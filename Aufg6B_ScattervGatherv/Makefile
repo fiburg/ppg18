@@ -1,7 +1,7 @@
 # Common definitions
 CC = mpif90
 EX = mpiexec
-NP = 4
+NP = 7
 
 main.x: mod_initialize.o mod_calculation.o main.o
 	$(CC) -g -o main.x main.o mod_initialize.o mod_calculation.o

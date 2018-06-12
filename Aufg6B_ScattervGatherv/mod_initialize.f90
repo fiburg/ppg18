@@ -14,8 +14,6 @@ module initialize
 		integer, intent(in) :: xdim, ydim 
 		integer, dimension(:,:), pointer, intent(inout) :: matrix
 		
-		!create matrix
-
 		allocate(matrix(1:xdim,1:ydim))
 		
 		matrix(:,:) = 0.
@@ -30,9 +28,9 @@ module initialize
 		
 		xdim = ubound(matrix, 1)
 		ydim = ubound(matrix, 2)
-
+		
 		seq = xdim * ydim
-
+		
 		do i=1,xdim
 			do j=1,ydim
 				matrix(i,j) = seq
@@ -48,9 +46,18 @@ module initialize
 		implicit none
 		integer, dimension(:), pointer, intent(inout) :: sendcounts, displacement
 		integer, intent(in) :: mdim, mpi_size
+		integer :: i
 		
-		print*, mod(mdim, mpi_size)
-
+		allocate(sendcounts(1:mpi_size))
+		allocate(displacement(1:mpi_size))
+		
+		sendcounts = mdim * int(mdim / mpi_size)
+		sendcounts(mpi_size) = mdim * (int(mdim / mpi_size) + mod(mdim, mpi_size))
+		
+		displacement(1) = 0
+		do i=2,mpi_size 
+			displacement(i) = displacement(i-1) + sendcounts(i-1)
+		end do
 		
 	end subroutine initSequence
 
