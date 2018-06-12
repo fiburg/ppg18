@@ -35,7 +35,7 @@ module initialize
 
 		do i=1,xdim
 			do j=1,ydim
-				matrix(i,j) = seq
+				matrix(j,i) = seq
 				seq = seq - 1
 			end do
 		end do

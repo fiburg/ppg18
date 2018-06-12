@@ -28,6 +28,11 @@ program main
 
 	call MPI_SCATTER(matrix, csize, MPI_INTEGER, chunck, csize, MPI_INTEGER, master, MPI_COMM_WORLD, mpi_err)
 
+	do i=1,24
+		print*, chunck(i,:)
+	end do
+	print*, " "
+
 	call operationSequence(chunck, mpi_rank)
 
 
