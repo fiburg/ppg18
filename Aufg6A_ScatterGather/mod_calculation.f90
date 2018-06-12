@@ -3,6 +3,7 @@
 ! Abgabe 12.06.2018
 ! Menken und Burgemeister
 
+! Manipulation der Matrix
 module calculation
 	implicit none
 	contains
