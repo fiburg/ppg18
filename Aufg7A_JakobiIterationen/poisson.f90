@@ -25,8 +25,6 @@ program Poisson
 		call createMatrix(matrix, NDIM, NDIM)
 		call initializeMatrix(matrix)
 		call outputMatrix(matrix, interlines, 0)
-		print*, matrix(:,0)
-
 	end if
 
 	call initSequence(sendcounts, displacement, NDIM+1, mpi_size)
@@ -62,7 +60,7 @@ program Poisson
 	allocate(elrow(0:NDIM))
 
 
-	do iter=1,2!NITER
+	do iter=1,NITER
 
 		frow(:) = chunck(:,1)
 		lrow(:) = chunck(:,cdim-1)
@@ -117,8 +115,6 @@ program Poisson
 	deallocate(frow)
 	deallocate(lrow)
 
-	
-
 	if (mpi_rank == master) then
 		call MPI_GATHERV(chunck(:,0:cdim-1), sendcounts(mpi_rank+1), MPI_INTEGER, &
 		&		 matrix, sendcounts, displacement, MPI_INTEGER, &
@@ -132,6 +128,8 @@ program Poisson
 		&		 matrix, sendcounts, displacement, MPI_INTEGER, &
 		&		 master, MPI_COMM_WORLD, mpi_err)
 	end if
+	
+	call freeMatrix(chunck)
 	
 	if (mpi_rank == master) then
 
