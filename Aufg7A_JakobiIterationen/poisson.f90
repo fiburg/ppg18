@@ -1,3 +1,8 @@
+! Paralleles Programmieren für Geowissenschaftler im SS 2018
+! Uebungsblatt 4
+! Abgabe 15.05.2018
+! Menken und Burgemeister
+
 program Poisson
 	use mpi
 	use initialize
@@ -66,6 +71,7 @@ program Poisson
 
 	end do
 
+	! Zusammensetzen der Matrix aus Teilmatrizen
 	if (mpi_rank == master) then
 		call MPI_GATHERV(chunck(:,0:cdim-1), sendcounts(mpi_rank+1), MPI_REAL8, &
 		&		 matrix, sendcounts, displacement, MPI_REAL8, &

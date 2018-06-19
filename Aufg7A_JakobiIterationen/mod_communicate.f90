@@ -3,14 +3,14 @@
 ! Abgabe 19.06.2018
 ! Menken und Burgemeister
 
-!
+! Modul zur Kommunikation zwischen Prozessen
 module communicate
 	use mpi
 	
 	implicit none
 	contains
 
-	! Kommunikation zwischen den Prozessen
+	! Kommunikation der Halo-Line zwischen den Prozessen
 	subroutine sendrecvHalo(master, NDIM, iter, chunck, cdim, mpi_err, mpi_rank, mpi_size, mpi_req, status)
 		implicit none
 		real(kind=8), dimension(:,:), pointer, intent(inout) :: chunck
@@ -18,7 +18,6 @@ module communicate
 		integer, intent(in) :: master, iter, cdim, NDIM
 		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, mpi_req, status(MPI_STATUS_SIZE)
 		
-		! first row, last row, e
 		allocate(frow(0:NDIM))
 		allocate(lrow(0:NDIM))
 		allocate(efrow(0:NDIM))
