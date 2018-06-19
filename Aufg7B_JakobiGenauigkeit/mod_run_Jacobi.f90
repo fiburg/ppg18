@@ -13,12 +13,12 @@ module run
 		implicit none
 		real(kind=8), dimension(:,:), pointer, intent(inout) :: matrix
 		real(kind=8), dimension(:,:), pointer :: old
-		real(kind=8) :: star = 0., corr = 0.
-		real(kind=8), parameter :: eps = 10.E-6	! geforderte Genauigkeit
-		logical :: acc = .false. ! Abbruchbedingung 
+		real(kind=8) :: star, corr
+		real(kind=8) :: eps	! geforderte Genauigkeit
+		logical :: acc	! Abbruchbedingung 
 		integer :: xdim, ydim
 		integer :: i, j
-		integer :: ndiff = 0
+		integer :: ndiff
 
 		xdim = ubound(matrix, 1)
 		ydim = ubound(matrix, 2)
@@ -26,6 +26,10 @@ module run
 		call createMatrix(old, xdim, ydim)
 
 		old(:,:) = matrix(:,:)
+
+		ndiff = 0
+		star = 0.
+		corr = 0.
 
 		do i=1,xdim-1
 			do j=1,ydim-1
@@ -46,7 +50,7 @@ module run
 		end do
 
 		! teste ueberall Genauigkeit erreicht
-		if(ndiff==((NDIM-1)*(NDIM-1))) fin = .true.
+		if(ndiff==((xdim-1)*(ydim-1))) acc = .true.
 
 		deallocate(old)
 		
