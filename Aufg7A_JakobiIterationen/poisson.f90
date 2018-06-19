@@ -1,6 +1,6 @@
 ! Paralleles Programmieren für Geowissenschaftler im SS 2018
-! Uebungsblatt 4
-! Abgabe 15.05.2018
+! Uebungsblatt 7
+! Abgabe 19.06.2018
 ! Menken und Burgemeister
 
 program Poisson
@@ -52,44 +52,47 @@ program Poisson
 	! Verteilung der Matrix auf Teilmatrix
 	if (mpi_rank == master) then
 		call MPI_SCATTERV(matrix, sendcounts, displacement, MPI_REAL8, &
-		&		  chunck(:,0:cdim-1), sendcounts(mpi_rank+1), MPI_REAL8, &
-		&		  master, MPI_COMM_WORLD, mpi_err)
+		&		  chunck(:,0:cdim-1), sendcounts(mpi_rank+1), &
+		&		  MPI_REAL8, master, MPI_COMM_WORLD, mpi_err)
 	else if (mpi_rank == mpi_size-1) then
 		call MPI_SCATTERV(matrix, sendcounts, displacement, MPI_REAL8, &
-		&		  chunck(:,1:), sendcounts(mpi_rank+1), MPI_REAL8, &
-		&		  master, MPI_COMM_WORLD, mpi_err)
+		&		  chunck(:,1:), sendcounts(mpi_rank+1), &
+		&		  MPI_REAL8, master, MPI_COMM_WORLD, mpi_err)
 	else
 		call MPI_SCATTERV(matrix, sendcounts, displacement, MPI_REAL8, &
-		&		  chunck(:,1:cdim-1), sendcounts(mpi_rank+1), MPI_REAL8, &
-		&		  master, MPI_COMM_WORLD, mpi_err)
+		&		  chunck(:,1:cdim-1), sendcounts(mpi_rank+1), &
+		&		  MPI_REAL8, master, MPI_COMM_WORLD, mpi_err)
 	end if
 	
 	! Iteration Jacobi Berechnung
 	do iter=1,NITER
-		call sendrecvHalo(master, NDIM, iter, chunck, cdim, mpi_err, mpi_rank, mpi_size, mpi_req, status)
+		call sendrecvHalo(master, NDIM, iter, chunck, cdim, mpi_err, &
+		&		  mpi_rank, mpi_size, mpi_req, status)
 		call calculate(chunck)
 
 	end do
 
 	! Zusammensetzen der Matrix aus Teilmatrizen
 	if (mpi_rank == master) then
-		call MPI_GATHERV(chunck(:,0:cdim-1), sendcounts(mpi_rank+1), MPI_REAL8, &
-		&		 matrix, sendcounts, displacement, MPI_REAL8, &
-		&		 master, MPI_COMM_WORLD, mpi_err)
+		call MPI_GATHERV(chunck(:,0:cdim-1), sendcounts(mpi_rank+1), &
+		&		 MPI_REAL8, matrix, sendcounts, displacement, &
+		&		 MPI_REAL8, master, MPI_COMM_WORLD, mpi_err)
 	else if (mpi_rank == mpi_size-1) then
-		call MPI_GATHERV(chunck(:,1:), sendcounts(mpi_rank+1), MPI_REAL8, &
-		&		 matrix, sendcounts, displacement, MPI_REAL8, &
-		&		 master, MPI_COMM_WORLD, mpi_err)
+		call MPI_GATHERV(chunck(:,1:), sendcounts(mpi_rank+1), &
+		&		 MPI_REAL8, matrix, sendcounts, displacement, &
+		&		 MPI_REAL8, master, MPI_COMM_WORLD, mpi_err)
 	else
-		call MPI_GATHERV(chunck(:,1:cdim-1), sendcounts(mpi_rank+1), MPI_REAL8, &
-		&		 matrix, sendcounts, displacement, MPI_REAL8, &
-		&		 master, MPI_COMM_WORLD, mpi_err)
+		call MPI_GATHERV(chunck(:,1:cdim-1), sendcounts(mpi_rank+1), &
+		&		 MPI_REAL8, matrix, sendcounts, displacement, &
+		&		 MPI_REAL8, master, MPI_COMM_WORLD, mpi_err)
 	end if
 	
 	call freeMatrix(chunck)
 	
 	if (mpi_rank == master) then
-		call outputMatrix(matrix, interlines, iter-1)
+		! Notwendiges Dekrement bei Abbruch nach Iterationen
+		if (iter > NITER) iter = iter-1
+		call outputMatrix(matrix, interlines, iter)
 		call freeMatrix(matrix)
 	end if
 
