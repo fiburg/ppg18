@@ -1,6 +1,6 @@
 ! Paralleles Programmieren für Geowissenschaftler im SS 2018
-! Uebungsblatt 7
-! Abgabe 19.06.2018
+! Uebungsblatt 8
+! Abgabe 26.06.2018
 ! Menken und Burgemeister
 
 program Poisson
@@ -86,30 +86,31 @@ program Poisson
 	do iter=1,NITER
 		call recvStop(fin, master, iter, mpi_err, mpi_rank, &
 		&	      mpi_size, status)
-
+		
 		call recvAcc(oacc, master, iter, mpi_err, mpi_rank, &
 		&	     mpi_size, status)
-
+		
 		! Wenn alle Prozesse die Genauigkeit erreicht haben,
 		! wird die Iteration synchron beendet
-		if(mpi_rank == master .and oacc) fin = .true.
-	
+		if(mpi_rank == master .and. oacc) fin = .true.
+		
 		call recvHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
 		&	      mpi_err, mpi_rank, mpi_size, status)
 		
 		call calculate(chunck, eps, acc)
 		
+		! Der letzte Prozess hat keinen Vorgaenger, daher...
 		if (mpi_rank == mpi_size-1) oacc = acc
-
+		
 		call sendAcc(oacc, acc, master, iter, mpi_err, mpi_rank, &
 		&	     mpi_size, status)
-
+		
 		call sendStop(fin, master, iter, mpi_err, mpi_rank, &
 		&	      mpi_size, status)
-
+		
 		call sendHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
 		&	      mpi_err, mpi_rank, mpi_size, status)
-
+		
 		if (fin) exit
 	end do
 	

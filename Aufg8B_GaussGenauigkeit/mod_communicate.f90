@@ -110,7 +110,8 @@ module communicate
 		
 		if (mpi_rank < mpi_size-1) then
 			call MPI_ISEND(fin, 1, MPI_LOGICAL, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
 		end if
 		
 	end subroutine
@@ -126,8 +127,8 @@ module communicate
 		
 		if(mpi_rank < mpi_size-1 .and. iter > mpi_size - mpi_rank -1) then
 			call MPI_IRECV(oacc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
-			call MPI_WAIT(mpi_mreq, status, mpi_err)
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
 		end if
 	
 	end subroutine
@@ -143,7 +144,8 @@ module communicate
 		
 		if (mpi_rank > master .and. iter > mpi_size - mpi_rank - 1)  then
 			call MPI_ISEND((acc .and. oacc), 1, MPI_LOGICAL, mpi_rank-1, iter+1, &
-			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
 		end if
 	
 	end subroutine
