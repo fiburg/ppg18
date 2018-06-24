@@ -28,11 +28,11 @@ module communicate
 		lrow(:) = chunck(:,cdim-1)
 		
 		if (mpi_rank == master) then
-			call MPI_ISEND(lrow, size(lrow), MPI_REAL8, mpi_rank+1, iter+1, &
+			call MPI_ISEND(lrow, size(lrow), MPI_REAL8, mpi_rank+1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
 		else if (mpi_rank == mpi_size-1) then
-			call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, iter, &
+			call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, iter+1, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
 		else
@@ -80,6 +80,65 @@ module communicate
 			chunck(:,0) = efrow(:) ! untere Randzeile
 		end if
 	
+	end subroutine
+
+	! Die Genauigkeit wird ueber die Prozesse zum Nachbarn gestreut, nach 
+	! 2*'mpi_size'-Iterationsschritten, hat jeder Prozess jede Moeglichkeit 
+	! (Abbruch oder kein Abbruch) erhalten 
+	subroutine sendAcc(acc, master, iter, &
+	&		    mpi_err, mpi_rank, mpi_size, status)
+		implicit none
+		logical, intent(in) :: acc
+		integer, intent(in) :: master, iter, cdim, NDIM
+		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, status(MPI_STATUS_SIZE)
+		integer :: mpi_req, mpi_lreq
+		
+		if (mpi_rank == master) then
+			call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
+		else if (mpi_rank == mpi_size-1) then
+			call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank-1, iter+1, &
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
+		else
+			call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank-1, iter+1, &
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
+			call MPI_WAIT(mpi_lreq, status, mpi_err)
+		end if
+		
+	end subroutine
+
+	subroutine recvAcc(nxt_acc, prv_acc, master, iter, &
+	&		    mpi_err, mpi_rank, mpi_size, status)
+		implicit none
+		logical, intent(inout) :: acc
+		integer, intent(in) :: master, iter, cdim, NDIM
+		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, status(MPI_STATUS_SIZE)
+		integer :: mpi_req, mpi_lreq
+
+		if (mpi_rank == master) then
+			call MPI_IRECV(nxt_acc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
+			prv_acc = .true.
+		else if (mpi_rank == mpi_size-1) then
+			call MPI_IRECV(prv_acc, 1, MPI_LOGICAL, mpi_rank-1, iter, &
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
+			nxt_acc = .true.
+		else
+			call MPI_IRECV(prv_acc, 1, MPI_LOGICAL, mpi_rank-1, iter, &
+			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			call MPI_IRECV(nxt_acc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
+			call MPI_WAIT(mpi_req, status, mpi_err)
+			call MPI_WAIT(mpi_lreq, status, mpi_err)
+		end if
+		
 	end subroutine
 
 end module communicate

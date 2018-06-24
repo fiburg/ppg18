@@ -78,14 +78,21 @@ program Poisson
 	! Sende erste Zeile als erste Haloline zum Start der Berechnung 
 	if (mpi_rank > master) then
 		frow(:) = chunck(:,1)
-		call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, mpi_rank+1, &
+		call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, 1, &
 		&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-		
+		call MPI_WAIT(mpi_req, status, mpi_err)
+
+		call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank-1, 1, &
+		&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 		call MPI_WAIT(mpi_req, status, mpi_err)
 	end if
 
 	! Iteration Gauss Berechnung
 	do iter=1,NITER
+		
+		subroutine recvAcc(nxt_acc, prv_acc, master, iter, &
+		&		    mpi_err, mpi_rank, mpi_size, status)
+	
 		call recvHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
 		&	      mpi_err, mpi_rank, mpi_size, status)
 
@@ -93,6 +100,9 @@ program Poisson
 
 		call sendHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
 		&	      mpi_err, mpi_rank, mpi_size, status)
+
+		subroutine sendAcc(acc, master, iter, &
+		&		    mpi_err, mpi_rank, mpi_size, status)
 
 
 	end do
