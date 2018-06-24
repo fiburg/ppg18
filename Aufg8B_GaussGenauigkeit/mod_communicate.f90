@@ -88,23 +88,23 @@ module communicate
 	subroutine sendAcc(acc, master, iter, &
 	&		    mpi_err, mpi_rank, mpi_size, status)
 		implicit none
-		logical, intent(in) :: acc
-		integer, intent(in) :: master, iter, cdim, NDIM
+		integer, dimension(:), pointer, intent(in) :: acc
+		integer, intent(in) :: master, iter
 		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, status(MPI_STATUS_SIZE)
 		integer :: mpi_req, mpi_lreq
 		
 		if (mpi_rank == master) then
-			call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			call MPI_ISEND(acc, mpi_size, MPI_INTEGER, mpi_rank+1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
 		else if (mpi_rank == mpi_size-1) then
-			call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank-1, iter+1, &
+			call MPI_ISEND(acc, mpi_size, MPI_INTEGER, mpi_rank-1, iter+1, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
 		else
-			call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank-1, iter+1, &
+			call MPI_ISEND(acc, 1, MPI_INTEGER, mpi_rank-1, iter+1, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			call MPI_ISEND(acc, 1, MPI_INTEGER, mpi_rank+1, iter, &
 			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
 			call MPI_WAIT(mpi_lreq, status, mpi_err)
@@ -115,25 +115,25 @@ module communicate
 	subroutine recvAcc(nxt_acc, prv_acc, master, iter, &
 	&		    mpi_err, mpi_rank, mpi_size, status)
 		implicit none
-		logical, intent(inout) :: acc
-		integer, intent(in) :: master, iter, cdim, NDIM
+		integer, dimension(:), pointer, intent(inout) :: nxt_acc, prv_acc
+		integer, intent(in) :: master, iter
 		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, status(MPI_STATUS_SIZE)
 		integer :: mpi_req, mpi_lreq
 
 		if (mpi_rank == master) then
-			call MPI_IRECV(nxt_acc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			call MPI_IRECV(nxt_acc, mpi_size, MPI_INTEGER, mpi_rank+1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
-			prv_acc = .true.
+			prv_acc = nxt_acc
 		else if (mpi_rank == mpi_size-1) then
-			call MPI_IRECV(prv_acc, 1, MPI_LOGICAL, mpi_rank-1, iter, &
+			call MPI_IRECV(prv_acc, mpi_size, MPI_INTEGER, mpi_rank-1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
-			nxt_acc = .true.
+			nxt_acc = prv_acc
 		else
-			call MPI_IRECV(prv_acc, 1, MPI_LOGICAL, mpi_rank-1, iter, &
+			call MPI_IRECV(prv_acc, mpi_size, MPI_INTEGER, mpi_rank-1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_IRECV(nxt_acc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			call MPI_IRECV(nxt_acc, mpi_size, MPI_INTEGER, mpi_rank+1, iter, &
 			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
 			call MPI_WAIT(mpi_lreq, status, mpi_err)

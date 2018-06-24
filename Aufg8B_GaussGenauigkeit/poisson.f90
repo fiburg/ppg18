@@ -14,7 +14,7 @@ program Poisson
 
 	real(kind=8), dimension(:,:), pointer :: matrix, chunck	! Matrix, Teilmatrix
 	real(kind=8), dimension(:), pointer :: frow, lrow, efrow, elrow	! Halo lines
-	real(kind=8), parameter :: eps = 10.E-7	! geforderte Genauigkeit	
+	real(kind=8), parameter :: eps = 10.E-7	! geforderte Genauigkeit
 	integer, parameter :: NDIM = 96	! Dimension der Matrix
 	integer, parameter :: interlines = 11	! Anzahl Interlines
 	integer, parameter :: NITER = 100000	! Anzahl Iterationen
@@ -22,8 +22,9 @@ program Poisson
 	integer, parameter :: master = 0	! Master Prozess
 	integer :: iter, cdim	! Anzahl der ausgeführten Iterationen, Dimension des Chuncks
 	integer :: mpi_err, mpi_rank, mpi_size
-	integer :: mpi_req, status(MPI_STATUS_SIZE)
-	logical :: acc = .false., prv_acc = .false., nxt_acc = .false., fin = .false.	! Abbruchbedingung
+	integer :: mpi_mreq, mpi_lmreq, status(MPI_STATUS_SIZE)
+	logical :: acc = .false., oacc = .false., fin = .false.	! Abbruchbedingung
+	integer :: nruns = 0
 	
 	! MPI Initialisierung
 	call MPI_INIT(mpi_err)
@@ -72,38 +73,61 @@ program Poisson
 	lrow(:) = 0
 	efrow(:) = 0
 	elrow(:) = 0
-	
-	print*, mpi_rank
 
 	! Sende erste Zeile als erste Haloline zum Start der Berechnung 
 	if (mpi_rank > master) then
 		frow(:) = chunck(:,1)
 		call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, 1, &
-		&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-		call MPI_WAIT(mpi_req, status, mpi_err)
-
-		call MPI_ISEND(acc, 1, MPI_LOGICAL, mpi_rank-1, 1, &
-		&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-		call MPI_WAIT(mpi_req, status, mpi_err)
+		&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+		call MPI_WAIT(mpi_mreq, status, mpi_err)
 	end if
 
 	! Iteration Gauss Berechnung
 	do iter=1,NITER
-		
-		subroutine recvAcc(nxt_acc, prv_acc, master, iter, &
-		&		    mpi_err, mpi_rank, mpi_size, status)
+		if(mpi_rank > master) then
+			call MPI_IRECV(fin, 1, MPI_LOGICAL, mpi_rank-1, iter, &
+			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+			call MPI_WAIT(mpi_mreq, status, mpi_err)
+		end if
+
+		if(mpi_rank < mpi_size-1 .and. iter > mpi_size - mpi_rank -1)then
+			!print*,mpi_rank,":recvs:",iter,":from:",mpi_rank+1
+
+			call MPI_IRECV(oacc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+			call MPI_WAIT(mpi_mreq, status, mpi_err)
+		end if
+
+		if(mpi_rank == master) then
+			if(oacc) fin = .true.
+		end if
 	
 		call recvHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
 		&	      mpi_err, mpi_rank, mpi_size, status)
-
+		
 		call calculate(chunck, eps, acc)
+		
+		if (mpi_rank == mpi_size-1) oacc = acc
+
+		if (mpi_rank > master .and. iter > mpi_size - mpi_rank - 1)  then
+			!print*, mpi_rank,":",(acc .and. oacc)
+			call MPI_ISEND((acc .and. oacc), 1, MPI_LOGICAL, mpi_rank-1, iter+1, &
+			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+			!print*,mpi_rank,":sends:",iter+1,":to:",mpi_rank-1,":in:",iter
+		end if
+
+		if (mpi_rank < mpi_size-1) then
+			call MPI_ISEND(fin, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+		end if
 
 		call sendHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
 		&	      mpi_err, mpi_rank, mpi_size, status)
 
-		subroutine sendAcc(acc, master, iter, &
-		&		    mpi_err, mpi_rank, mpi_size, status)
-
+		if (fin) then 
+			print*,mpi_rank,":",iter
+			exit
+		end if
 
 	end do
 	
