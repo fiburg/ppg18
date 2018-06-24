@@ -21,7 +21,7 @@ program Poisson
 	integer, parameter :: master = 0	! Master Prozess
 	integer :: iter, cdim	! Anzahl der ausgeführten Iterationen, Dimension des Chuncks
 	integer :: mpi_err, mpi_rank, mpi_size
-	integer :: mpi_req, mpi_req2, status(MPI_STATUS_SIZE)
+	integer :: mpi_req, mpi_lreq, status(MPI_STATUS_SIZE)
 	
 	! MPI Initialisierung
 	call MPI_INIT(mpi_err)
@@ -65,16 +65,18 @@ program Poisson
 	end if
 	
 	! Allokation der Randzeilen zur Kommunikation
-	allocate(frow(0:NDIM), lrow(0:NDIM), efrow(0:NDIM), elrow(0:NDIM))
+	allocate(frow(0:NDIM))
+	allocate(lrow(0:NDIM))
+	allocate(efrow(0:NDIM))
+	allocate(elrow(0:NDIM))
 	
-
-	! Sende erste Haloline zum Master zum Start der Berechnung 
-	if (mpi_rank == master+1) then
+	! Sende erste Zeile als erste Haloline zum Start der Berechnung 
+	if (mpi_rank > master) then
 		frow(:) = chunck(:,1)
 		call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, 1, &
 		&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 		call MPI_WAIT(mpi_req, status, mpi_err)
-	end if	
+	end if
 
 	! Iteration Gauss Berechnung
 	do iter=1,NITER
@@ -84,49 +86,50 @@ program Poisson
 			call MPI_WAIT(mpi_req, status, mpi_err)
 			
 			chunck(:,cdim) = elrow(:) ! untere Randzeile
-		if (mpi_rank == mpi_size-1) then
+		else if (mpi_rank == mpi_size-1) then
 			call MPI_IRECV(efrow, size(efrow), MPI_REAL8, mpi_rank-1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
 			
 			chunck(:,0) = efrow(:) ! obere Randzeile
-		else	
+		else
 			call MPI_IRECV(efrow, size(efrow), MPI_REAL8, mpi_rank-1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_IRECV(elrow, size(elrow), MPI_REAL8, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req2, mpi_err)
+			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
-			call MPI_WAIT(mpi_req2, status, mpi_err)
-	
+			call MPI_WAIT(mpi_lreq, status, mpi_err)
+			
 			chunck(:,cdim) = elrow(:) ! obere Randzeile
 			chunck(:,0) = efrow(:) ! untere Randzeile
 		end if
-
-		call calculate(chunck)
 		
+		call calculate(chunck)
 
+		frow(:) = chunck(:,1)
+		lrow(:) = chunck(:,cdim-1)
+		
 		if (mpi_rank == master) then
 			call MPI_ISEND(lrow, size(lrow), MPI_REAL8, mpi_rank+1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)			
+			call MPI_WAIT(mpi_req, status, mpi_err)
 		else if (mpi_rank == mpi_size-1) then
-			call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, iter, &
+			call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, iter+1, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
 		else
-			call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, iter, &
+			call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, iter+1, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
 			call MPI_ISEND(lrow, size(lrow), MPI_REAL8, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
+			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
+			call MPI_WAIT(mpi_lreq, status, mpi_err)
 		end if
 	end do
-
+	
 	! Deallokation der Randzeilen der Kommunikation
 	deallocate(elrow, efrow, frow, lrow)
-
-
+	
 	! Zusammensetzen der Matrix aus Teilmatrizen
 	if (mpi_rank == master) then
 		call MPI_GATHERV(chunck(:,0:cdim-1), sendcounts(mpi_rank+1), &

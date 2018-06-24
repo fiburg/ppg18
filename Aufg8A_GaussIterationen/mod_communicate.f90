@@ -13,13 +13,12 @@ module communicate
 	! Kommunikation der Halo-Line zwischen den Prozessen
 	subroutine sendrecvHalo(chunck, frow, lrow, efrow, elrow, master, &
 	&			NDIM, iter, cdim, mpi_err, mpi_rank, &
-	&			mpi_size, status)
+	&			mpi_size, mpi_req, status)
 		implicit none
 		real(kind=8), dimension(:,:), pointer, intent(inout) :: chunck
 		real(kind=8), dimension(:), pointer, intent(inout) :: frow, lrow, efrow, elrow
 		integer, intent(in) :: master, iter, cdim, NDIM
 		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, mpi_req, status(MPI_STATUS_SIZE)
-		integer :: mpi_req
 		
 		frow(:) = chunck(:,1)
 		lrow(:) = chunck(:,cdim-1)
