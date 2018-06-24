@@ -69,6 +69,11 @@ program Poisson
 	allocate(lrow(0:NDIM))
 	allocate(efrow(0:NDIM))
 	allocate(elrow(0:NDIM))
+
+	frow(:) = 0
+	lrow(:) = 0
+	efrow(:) = 0
+	elrow(:) = 0
 	
 	! Sende erste Zeile als erste Haloline zum Start der Berechnung 
 	if (mpi_rank > master) then
@@ -80,51 +85,14 @@ program Poisson
 
 	! Iteration Gauss Berechnung
 	do iter=1,NITER
-		if (mpi_rank == master) then
-			call MPI_IRECV(elrow, size(elrow), MPI_REAL8, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-			
-			chunck(:,cdim) = elrow(:) ! untere Randzeile
-		else if (mpi_rank == mpi_size-1) then
-			call MPI_IRECV(efrow, size(efrow), MPI_REAL8, mpi_rank-1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-			
-			chunck(:,0) = efrow(:) ! obere Randzeile
-		else
-			call MPI_IRECV(efrow, size(efrow), MPI_REAL8, mpi_rank-1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_IRECV(elrow, size(elrow), MPI_REAL8, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-			call MPI_WAIT(mpi_lreq, status, mpi_err)
-			
-			chunck(:,cdim) = elrow(:) ! obere Randzeile
-			chunck(:,0) = efrow(:) ! untere Randzeile
-		end if
-		
+		call recvHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
+		&	      mpi_err, mpi_rank, mpi_size, status)	
+
 		call calculate(chunck)
 
-		frow(:) = chunck(:,1)
-		lrow(:) = chunck(:,cdim-1)
-		
-		if (mpi_rank == master) then
-			call MPI_ISEND(lrow, size(lrow), MPI_REAL8, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-		else if (mpi_rank == mpi_size-1) then
-			call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, iter+1, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-		else
-			call MPI_ISEND(frow, size(frow), MPI_REAL8, mpi_rank-1, iter+1, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_ISEND(lrow, size(lrow), MPI_REAL8, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-			call MPI_WAIT(mpi_lreq, status, mpi_err)
-		end if
+		call sendHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
+		&	      mpi_err, mpi_rank, mpi_size, status)	
+
 	end do
 	
 	! Deallokation der Randzeilen der Kommunikation
