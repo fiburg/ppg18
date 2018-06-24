@@ -82,63 +82,71 @@ module communicate
 	
 	end subroutine
 
-	! Die Genauigkeit wird ueber die Prozesse zum Nachbarn gestreut, nach 
-	! 2*'mpi_size'-Iterationsschritten, hat jeder Prozess jede Moeglichkeit 
-	! (Abbruch oder kein Abbruch) erhalten 
-	subroutine sendAcc(acc, master, iter, &
+	! Erhalte Stoppbefehl vom Master ueber Kette
+	subroutine recvStop(fin, master, iter, &
 	&		    mpi_err, mpi_rank, mpi_size, status)
 		implicit none
-		integer, dimension(:), pointer, intent(in) :: acc
+		logical, intent(in) :: fin
 		integer, intent(in) :: master, iter
 		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, status(MPI_STATUS_SIZE)
-		integer :: mpi_req, mpi_lreq
+		integer :: mpi_req
 		
-		if (mpi_rank == master) then
-			call MPI_ISEND(acc, mpi_size, MPI_INTEGER, mpi_rank+1, iter, &
+		if(mpi_rank > master) then
+			call MPI_IRECV(fin, 1, MPI_LOGICAL, mpi_rank-1, iter, &
 			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
 			call MPI_WAIT(mpi_req, status, mpi_err)
-		else if (mpi_rank == mpi_size-1) then
-			call MPI_ISEND(acc, mpi_size, MPI_INTEGER, mpi_rank-1, iter+1, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-		else
-			call MPI_ISEND(acc, 1, MPI_INTEGER, mpi_rank-1, iter+1, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_ISEND(acc, 1, MPI_INTEGER, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-			call MPI_WAIT(mpi_lreq, status, mpi_err)
 		end if
 		
 	end subroutine
 
-	subroutine recvAcc(nxt_acc, prv_acc, master, iter, &
+	! Sende Stoppbefehl ausgehend vom Master ueber Kette
+	subroutine sendStop(fin, master, iter, &
 	&		    mpi_err, mpi_rank, mpi_size, status)
 		implicit none
-		integer, dimension(:), pointer, intent(inout) :: nxt_acc, prv_acc
+		logical, intent(in) :: fin
 		integer, intent(in) :: master, iter
 		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, status(MPI_STATUS_SIZE)
-		integer :: mpi_req, mpi_lreq
-
-		if (mpi_rank == master) then
-			call MPI_IRECV(nxt_acc, mpi_size, MPI_INTEGER, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-			prv_acc = nxt_acc
-		else if (mpi_rank == mpi_size-1) then
-			call MPI_IRECV(prv_acc, mpi_size, MPI_INTEGER, mpi_rank-1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-			nxt_acc = prv_acc
-		else
-			call MPI_IRECV(prv_acc, mpi_size, MPI_INTEGER, mpi_rank-1, iter, &
-			&	       MPI_COMM_WORLD, mpi_req, mpi_err)
-			call MPI_IRECV(nxt_acc, mpi_size, MPI_INTEGER, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_lreq, mpi_err)
-			call MPI_WAIT(mpi_req, status, mpi_err)
-			call MPI_WAIT(mpi_lreq, status, mpi_err)
+		integer :: mpi_req
+		
+		if (mpi_rank < mpi_size-1) then
+			call MPI_ISEND(fin, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
 		end if
 		
 	end subroutine
+
+	! Erhalte Genauigkeit des naechsten Prozesses
+	subroutine recvAcc(oacc, master, iter, &
+	&		    mpi_err, mpi_rank, mpi_size, status)
+		implicit none
+		logical, intent(in) :: oacc
+		integer, intent(in) :: master, iter
+		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, status(MPI_STATUS_SIZE)
+		integer :: mpi_req
+		
+		if(mpi_rank < mpi_size-1 .and. iter > mpi_size - mpi_rank -1) then
+			call MPI_IRECV(oacc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
+			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+			call MPI_WAIT(mpi_mreq, status, mpi_err)
+		end if
+	
+	end subroutine
+
+	! Sende Genauigkeit mit Genauigkeit des naechsten Prozesses an vorherigen Prozess
+	subroutine sendAcc(oacc, acc, master, iter, &
+	&		    mpi_err, mpi_rank, mpi_size, status)
+		implicit none
+		logical, intent(in) :: oacc, acc
+		integer, intent(in) :: master, iter
+		integer, intent(in) :: mpi_err, mpi_rank, mpi_size, status(MPI_STATUS_SIZE)
+		integer :: mpi_req
+		
+		if (mpi_rank > master .and. iter > mpi_size - mpi_rank - 1)  then
+			call MPI_ISEND((acc .and. oacc), 1, MPI_LOGICAL, mpi_rank-1, iter+1, &
+			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
+		end if
+	
+	end subroutine
+
 
 end module communicate

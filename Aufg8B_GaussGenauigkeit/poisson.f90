@@ -84,23 +84,15 @@ program Poisson
 
 	! Iteration Gauss Berechnung
 	do iter=1,NITER
-		if(mpi_rank > master) then
-			call MPI_IRECV(fin, 1, MPI_LOGICAL, mpi_rank-1, iter, &
-			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
-			call MPI_WAIT(mpi_mreq, status, mpi_err)
-		end if
+		call recvStop(fin, master, iter, mpi_err, mpi_rank, &
+		&	      mpi_size, status)
 
-		if(mpi_rank < mpi_size-1 .and. iter > mpi_size - mpi_rank -1)then
-			!print*,mpi_rank,":recvs:",iter,":from:",mpi_rank+1
+		call recvAcc(oacc, master, iter, mpi_err, mpi_rank, &
+		&	     mpi_size, status)
 
-			call MPI_IRECV(oacc, 1, MPI_LOGICAL, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
-			call MPI_WAIT(mpi_mreq, status, mpi_err)
-		end if
-
-		if(mpi_rank == master) then
-			if(oacc) fin = .true.
-		end if
+		! Wenn alle Prozesse die Genauigkeit erreicht haben,
+		! wird die Iteration synchron beendet
+		if(mpi_rank == master .and oacc) fin = .true.
 	
 		call recvHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
 		&	      mpi_err, mpi_rank, mpi_size, status)
@@ -109,26 +101,16 @@ program Poisson
 		
 		if (mpi_rank == mpi_size-1) oacc = acc
 
-		if (mpi_rank > master .and. iter > mpi_size - mpi_rank - 1)  then
-			!print*, mpi_rank,":",(acc .and. oacc)
-			call MPI_ISEND((acc .and. oacc), 1, MPI_LOGICAL, mpi_rank-1, iter+1, &
-			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
-			!print*,mpi_rank,":sends:",iter+1,":to:",mpi_rank-1,":in:",iter
-		end if
+		call sendAcc(oacc, acc, master, iter, mpi_err, mpi_rank, &
+		&	     mpi_size, status)
 
-		if (mpi_rank < mpi_size-1) then
-			call MPI_ISEND(fin, 1, MPI_LOGICAL, mpi_rank+1, iter, &
-			&	       MPI_COMM_WORLD, mpi_mreq, mpi_err)
-		end if
+		call sendStop(fin, master, iter, mpi_err, mpi_rank, &
+		&	      mpi_size, status)
 
 		call sendHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
 		&	      mpi_err, mpi_rank, mpi_size, status)
 
-		if (fin) then 
-			print*,mpi_rank,":",iter
-			exit
-		end if
-
+		if (fin) exit
 	end do
 	
 	! Deallokation der Randzeilen der Kommunikation
