@@ -69,7 +69,6 @@ program Poisson
 	allocate(lrow(0:NDIM))
 	allocate(efrow(0:NDIM))
 	allocate(elrow(0:NDIM))
-
 	frow(:) = 0
 	lrow(:) = 0
 	efrow(:) = 0
@@ -86,12 +85,12 @@ program Poisson
 	! Iteration Gauss Berechnung
 	do iter=1,NITER
 		call recvHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
-		&	      mpi_err, mpi_rank, mpi_size, status)	
+		&	      mpi_err, mpi_rank, mpi_size, status)
 
 		call calculate(chunck)
 
 		call sendHalo(chunck, efrow, elrow, master, NDIM, iter, cdim, &
-		&	      mpi_err, mpi_rank, mpi_size, status)	
+		&	      mpi_err, mpi_rank, mpi_size, status)
 
 	end do
 	
