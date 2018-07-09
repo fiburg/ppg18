@@ -4,7 +4,6 @@
 ! Menken und Burgemeister
 
 program Poisson
-	use omp_lib
 	use initialize
 	use run
 	use finalize

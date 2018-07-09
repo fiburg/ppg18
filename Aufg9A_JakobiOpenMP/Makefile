@@ -8,7 +8,7 @@ FLAGS =  -fopenmp -Wextra -O3
 #FLAGS =  -Wextra -Wall -g
 
 poisson_Jacobi.x: mod_initialize.o mod_run_Jacobi.o mod_finalize.o poisson.o
-	$(CC) $(FLAGS) -o poisson_Jacobi.x poisson.o mod_run_Jacobi.o mod_communicate.o mod_finalize.o
+	$(CC) $(FLAGS) -o poisson_Jacobi.x poisson.o mod_initialize.o mod_run_Jacobi.o mod_finalize.o
 
 poisson.o: poisson.f90
 	$(CC) $(FLAGS) -c poisson.f90

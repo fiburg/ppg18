@@ -53,7 +53,7 @@ module run
 				if(abs(corr) < eps) ndiff = ndiff + 1
 			end do
 		end do
-		!$ OMP END PARALLEL DO
+		!$OMP END PARALLEL DO
 
 		! teste ueberall Genauigkeit erreicht
 		if(ndiff==((xdim-1)*(ydim-1))) acc = .true.
