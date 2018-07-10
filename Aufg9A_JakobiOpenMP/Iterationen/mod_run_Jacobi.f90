@@ -27,10 +27,10 @@ module run
 
 		star = 0.
 		corr = 0.
-		
+
 		!$OMP PARALLEL DO DEFAULT(NONE) &
-		!$OMP SHARED (xdim,ydim,old,eps,matrix) &
-		!$OMP PRIVATE(i,j,star,corr) &
+		!$OMP SHARED (xdim,ydim,old,matrix) &
+		!$OMP PRIVATE(i,j,star,corr)
 		do i=1,xdim-1
 			do j=1,ydim-1
 				! Abtaststern

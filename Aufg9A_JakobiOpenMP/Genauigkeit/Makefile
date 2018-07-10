@@ -1,8 +1,11 @@
 # Common definitions
 CC = gfortran
-THREADS = 4
+OMP_NUM_THREADS=10
+export OMP_NUM_THREADS
 
 # Compiler flags:
+#FLAGS = -Wextra -O3
+# flags for parallel use
 FLAGS =  -fopenmp -Wextra -O3
 # flags for debugging:
 #FLAGS =  -Wextra -Wall -g
@@ -23,7 +26,6 @@ mod_finalize.o: mod_finalize.f90
 	$(CC) $(FLAGS) -c mod_finalize.f90
 
 run: poisson_Jacobi.x
-	export OMP_NUM_THREADS=$(THREADS)
 	/usr/bin/time ./poisson_Jacobi.x
 
 clean:

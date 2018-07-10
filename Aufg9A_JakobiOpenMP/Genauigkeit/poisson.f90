@@ -12,9 +12,9 @@ program Poisson
 
 	real(kind=8), dimension(:,:), pointer :: matrix
 	real(kind=8), parameter :: eps = 10.E-8	! geforderte Genauigkeit	
-	integer, parameter :: NDIM = 96	! Dimension der Matrix
-	integer, parameter :: interlines = 11	! Anzahl Interlines
-	integer, parameter :: NITER = 100000	! Anzahl Iterationen
+	integer, parameter :: NDIM = 184	! Dimension der Matrix
+	integer, parameter :: interlines = 22	! Anzahl Interlines
+	integer, parameter :: NITER = 400000	! Anzahl Iterationen
 	integer :: iter	! ausgeführten Iterationen
 	logical :: acc = .false.
 	
